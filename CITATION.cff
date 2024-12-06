@@ -4,7 +4,7 @@ message: "If you use this software, please cite it using the metadata from this 
 type: software
 authors:
   - given-names: Dalia
-    family-names: Ortiz Pablo
+    family-names: Ortiz-Pablo
     affiliation: CDHU, Uppsala University
 repository-code: 'https://github.com/DaliaO15/VK-post-scraper'
 url: 'https://github.com/DaliaO15/VK-post-scraper'
