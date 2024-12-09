@@ -26,7 +26,9 @@ To run the scraper, Python libraries are required. Use the provided requirements
 pip install -r requirements.txt
 ```
 
-Make sure that Chromedriver is installed and running. If you need information on setting up Chromedriver, you can find it [here](**ADD LINK TO INFO ON THE CHROME DRIVER**).
+Make sure that Chromedriver is installed and running. If you need information on setting up Chromedriver, you can find it [here](https://developer.chrome.com/docs/chromedriver/get-started).
+
+> For my environment, I used conda and Python version 3.10.
 
 ## Usage
 
