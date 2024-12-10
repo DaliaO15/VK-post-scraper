@@ -31,22 +31,40 @@ def extract_actual_url(url):
 
     return unquote(actual_url)
 
-def get_post_content(soup):
-    """Extract text from the 'wall_post_text' div."""
-    wl_post_body_wrap = soup.find('div', class_='wl_post_body_wrap')
-    wall_post_text_div = wl_post_body_wrap.find('div', class_='wall_post_text')
-    return wall_post_text_div.get_text(strip=True, separator='\n')
+def extract_post_content_and_urls(soup):
+    """
+    Extract text and URLs from the 'wall_post_text' div.
 
-def extract_post_urls(soup):
-    """Extract URLs from the 'wall_post_text' div"""
-    wl_post_body_wrap = soup.find('div', class_='wl_post_body_wrap')
-    wall_post_text_div = wl_post_body_wrap.find('div', class_='wall_post_text')
-    return [a['href'] for a in wall_post_text_div.find_all('a', href=True)]
+    Returns:
+        tuple: (post_content, post_urls)
+               - post_content: The text content as a string.
+               - post_urls: A list of URLs.
+    """
+    try:
+        wl_post_body_wrap = soup.find('div', class_='wl_post_body_wrap')
+        wall_post_text_div = wl_post_body_wrap.find('div', class_='wall_post_text')
+
+        # Extract text content
+        post_content = wall_post_text_div.get_text(strip=True, separator='\n')
+
+        # Extract URLs
+        post_urls = [a['href'] for a in wall_post_text_div.find_all('a', href=True)]
+
+        return post_content, post_urls
+    except AttributeError:  # Handle missing elements gracefully
+        return "None", []
+
 
 def get_reaction_count(soup):
     """Get reaction count by finding the relevant element in the soup."""
     return soup.find("div", class_="ReactionsPreview__count").get_text()
 
+def safe_extract(func, default_value, *args, **kwargs):
+    # Extract info from post and leave as none if empty
+    try:
+        return func(*args, **kwargs)
+    except:
+        return default_value
 
 def scrape_posts_info(data, user, driver):
     """Retrieve information for all posts and store it in a list."""
@@ -60,6 +78,7 @@ def scrape_posts_info(data, user, driver):
         if index % 50 == 0:
             print(f"In post number {index} --- Id:{post_id}")
 
+        # Store info in a dictionary
         post_dict = {
             'Post_ID': post_id,
             'Post_link': post_link, 
@@ -71,6 +90,7 @@ def scrape_posts_info(data, user, driver):
             'Embeded_link': post['link-subuser-href']
         }
 
+        # Try to get the new content
         try:
             html = get_html_content(post_link, driver)
             soup = BeautifulSoup(html, "html.parser")
@@ -79,18 +99,6 @@ def scrape_posts_info(data, user, driver):
             if not soup or not soup.find("div", class_="wl_post"):
                 raise ValueError("Post not found")
             
-            # Extract post content, URLs, reaction count, and comments
-            post_content = get_post_content(soup)
-            post_urls = extract_post_urls(soup)
-            reaction_count = get_reaction_count(soup)
-            comments = process_comments(soup)
-
-            post_dict.update({
-                'Post_content': post_content,
-                'Urls_in_post_content': post_urls,
-                'Reactions': reaction_count, 
-                'Comments': comments
-            })
         except Exception as e:
             # Handle errors and update the dictionary with error information
             print(f"Error processing post {post_id}: {str(e)}")
@@ -99,6 +107,22 @@ def scrape_posts_info(data, user, driver):
                 'Urls_in_post_content': "ERROR",
                 'Reactions': "ERROR", 
                 'Comments': "ERROR"
+            })
+        else:
+            # Extract post content, URLs, reaction count, and comments
+            # For single-value functions
+            reaction_count = safe_extract(get_reaction_count, "None", soup)
+            comments = safe_extract(process_comments, [], soup)
+
+            # For the combined function
+            post_content, post_urls = safe_extract(
+                extract_post_content_and_urls, ("None", []), soup)
+            
+            post_dict.update({
+                'Post_content': post_content,
+                'Urls_in_post_content': post_urls,
+                'Reactions': reaction_count, 
+                'Comments': comments
             })
 
         # Append the post dictionary to the list
