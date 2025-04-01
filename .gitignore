@@ -1,2 +1,3 @@
 __pycache__/
 output_data_sample.xlsx
+*.DS_store

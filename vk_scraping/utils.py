@@ -7,7 +7,7 @@ from urllib.parse import unquote
 def get_html_content(url, driver):
     """Access post information by opening the provided URL in the browser."""
     driver.get(url)
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "wl_post")))
+    WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CLASS_NAME, "wl_post")))
     return driver.page_source
 
 def process_comments(soup):
@@ -31,28 +31,32 @@ def extract_actual_url(url):
 
     return unquote(actual_url)
 
-def extract_post_content_and_urls(soup):
+def extract_post_content_and_urls(soup, id):
     """
-    Extract text and URLs from the 'wall_post_text' div.
+    Extract URLs from the 'wall_post_text' div.
 
     Returns:
         tuple: (post_content, post_urls)
                - post_content: The text content as a string.
                - post_urls: A list of URLs.
     """
-    try:
-        wl_post_body_wrap = soup.find('div', class_='wl_post_body_wrap')
-        wall_post_text_div = wl_post_body_wrap.find('div', class_='wall_post_text')
+    target_id = "wpt" + str(id)
+    container_selector = f"div#{target_id}.wall_post_cont._wall_post_cont"
+    container = soup.select_one(container_selector)
 
-        # Extract text content
-        post_content = wall_post_text_div.get_text(strip=True, separator='\n')
+    if container:
+        text_div = container.find("div", class_="vkitShowMoreText__text--ULCyL")
+        if text_div:
+            #post_content = text_div.get_text(strip=True)
+            post_urls = [a.get('href') for a in text_div.find_all('a', href=True)]
+        else:
+            #post_content = None
+            post_urls = []
+    else:
+        #post_content = None
+        post_urls = []
 
-        # Extract URLs
-        post_urls = [a['href'] for a in wall_post_text_div.find_all('a', href=True)]
-
-        return post_content, post_urls
-    except AttributeError:  # Handle missing elements gracefully
-        return "None", []
+    return post_urls #post_content, 
 
 
 def get_reaction_count(soup):
@@ -85,9 +89,8 @@ def scrape_posts_info(data, user, driver):
             'User': user, 
             'User_post_date': post['user-post-date'], 
             'Subuser': post['subuser-name'],
-            'Subuser_post_date': post["subuser-post-date"],
-            'Embeded_link_name': post['link-subuser'], 
-            'Embeded_link': post['link-subuser-href']
+            'Embeded_link': post['link-subuser-href'],
+            'Post_content': post['post_content']
         }
 
         # Try to get the new content
@@ -103,7 +106,6 @@ def scrape_posts_info(data, user, driver):
             # Handle errors and update the dictionary with error information
             print(f"Error processing post {post_id}: {str(e)}")
             post_dict.update({
-                'Post_content': "ERROR",
                 'Urls_in_post_content': "ERROR",
                 'Reactions': "ERROR", 
                 'Comments': "ERROR"
@@ -115,11 +117,10 @@ def scrape_posts_info(data, user, driver):
             comments = safe_extract(process_comments, [], soup)
 
             # For the combined function
-            post_content, post_urls = safe_extract(
-                extract_post_content_and_urls, ("None", []), soup)
+            print("Fetch info")
+            post_urls = extract_post_content_and_urls(soup, post_id)
             
             post_dict.update({
-                'Post_content': post_content,
                 'Urls_in_post_content': post_urls,
                 'Reactions': reaction_count, 
                 'Comments': comments
