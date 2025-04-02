@@ -3,8 +3,6 @@ from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
 import utils
 import argparse
-import pandas as pd
-import utils
 
 """
 ** Usage:
