@@ -23,7 +23,7 @@ cd vk_scraping
 To run the scraper, Python libraries are required. Use the provided requirements file to install these libraries in your environment:
 
 ```bash
-pip install -r requirements.txt
+conda env create -f environment.yml
 ```
 
 Make sure that Chromedriver is installed and running. If you need information on setting up Chromedriver, you can find it [here](https://developer.chrome.com/docs/chromedriver/get-started).
