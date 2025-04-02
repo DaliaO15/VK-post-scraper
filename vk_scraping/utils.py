@@ -117,7 +117,7 @@ def scrape_posts_info(data, user, driver):
             comments = safe_extract(process_comments, [], soup)
 
             # For the combined function
-            print("Fetch info")
+            #print("Fetch info")
             post_urls = extract_post_content_and_urls(soup, post_id)
             
             post_dict.update({
